@@ -7,25 +7,26 @@ interface IEnvironments{
         portHttp: number,
         portHttps: number,
         envName: string,
-        phoneLength: number,
+        hashingSecret: string,
+        maxChecks: number,
     }
 }
-// Container for all the environments
+
 const environments: IEnvironments = {
-    // Staging object
     staging: {
         portHttp: 3000,
         portHttps: 3001,
         envName: 'staging',
-        phoneLength: 12,
+        hashingSecret: 'try to guess me:)',
+        maxChecks: 5,
     },
     production: {
         portHttp: 5000,
         portHttps: 5001,
         envName: 'production',
-        phoneLength: 12,
+        hashingSecret: 'try to guess meeeeeeee:)',
+        maxChecks: 5,
     },
-
 };
 
 const currentEnvironment = process.env.NODE_ENV && process.env.NODE_ENV.length > 0 ? process.env.NODE_ENV.toLowerCase() : '';

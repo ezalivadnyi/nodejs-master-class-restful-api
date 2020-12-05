@@ -1,3 +1,5 @@
+import * as http from "http";
+
 interface IResponseData{
     message: string
 }
@@ -5,22 +7,27 @@ interface IResponseData{
 export type TResponseCallback = (statusCode?: number, responseData?: IResponseData | object) => void
 export type TRouterHandler = (requestData: IRequestData, responseCallback: TResponseCallback) => void
 
-export interface IRouter {
+export interface IRouter{
     [key: string]: TRouterHandler
 }
 
-export interface IRouterHandler {
-    [key: string]: TRouterHandler
+export interface IRouterHandler{
+    [key: string]: TRouterHandler,
+    notFound: TRouterHandler,
+    ping: TRouterHandler,
+    users: TRouterHandler,
+    tokens: TRouterHandler,
+    checks: TRouterHandler,
 }
 
-export type IHttpMethodHandler = {
+export type THttpMethodHandler = {
     [key in 'get' | 'post' | 'put' | 'delete' | string]: TRouterHandler
 }
 
 export interface IRequestData{
     host: string,
     method: string,
-    headers: object,
+    headers: http.IncomingHttpHeaders,
     queryStringObject: any,
     payload: any,
 }
@@ -31,4 +38,10 @@ export interface IUser{
     phone: string | undefined,
     password: string | undefined,
     tosAgreement: boolean | undefined,
+}
+
+export interface IToken{
+    'phone': string,
+    'id': string,
+    'expires': number,
 }

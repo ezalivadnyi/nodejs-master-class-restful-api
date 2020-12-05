@@ -5,7 +5,7 @@ import {StringDecoder} from 'string_decoder';
 import fs from 'fs';
 
 import config from './config';
-import router from './lib/router';
+import router from './router';
 import helpers from './lib/helpers';
 import {IRequestData} from "./Interfaces";
 
@@ -22,8 +22,8 @@ serverHttp.listen(config.portHttp, () => {
 
 // The HTTPS server should respond only to HTTP requests
 const serverHttpsOptions = {
-    'key': fs.readFileSync('./https/key.pem'),
-    'cert': fs.readFileSync('./https/cert.pem'),
+    'key': fs.readFileSync(__dirname + '/../https/key.pem'),
+    'cert': fs.readFileSync(__dirname + '/../https/cert.pem'),
 };
 const serverHttps = https.createServer(serverHttpsOptions, (req, res) => {
     unifiedServer(req, res);
@@ -38,7 +38,6 @@ const unifiedServer = (req: http.IncomingMessage, res: http.ServerResponse) => {
 
     if(req.url) {
         // Get the url and parse it
-        console.log('req.url', req.url)
         const parsedUrl = url.parse(req.url, true);
 
         if(parsedUrl && parsedUrl.pathname) {
@@ -49,6 +48,7 @@ const unifiedServer = (req: http.IncomingMessage, res: http.ServerResponse) => {
             const queryStringObject = parsedUrl.query;
 
             // Get the HTTP request method
+            console.log(req.method, 'req.url:', req.url)
             const method = req.method ? req.method.toLowerCase() : 'get';
 
             // Get the headers as an object
@@ -70,7 +70,7 @@ const unifiedServer = (req: http.IncomingMessage, res: http.ServerResponse) => {
                     method,
                     headers,
                     queryStringObject,
-                    payload: helpers.jsonToObject(buffer)
+                    payload: buffer ? helpers.jsonToObject(buffer) : ''
                 }
 
                 chosenHandler(requestData, (statusCode: number | undefined, responsePayload: object | undefined) => {

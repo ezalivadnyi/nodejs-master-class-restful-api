@@ -1,20 +1,20 @@
 /**
- * Library for storing and editing data
+ * Library for storing and editing data in .data folder
  */
 
-// Dependencies
 import fs from 'fs';
 import path from 'path';
 import ErrnoException = NodeJS.ErrnoException;
+
 import helpers from "./helpers";
 
 // Container for the module (to be exported)
 const lib = {
     // Base directory for the data folder
-    baseDir: path.join(__dirname, '/../.data'),
+    baseDir: path.join(__dirname, '/../../.data'),
 
     // Write data to a file
-    create: (directory: string, filename: string, data: object, callback: (error: string | boolean) => void) => {
+    create: (directory: string, filename: string, data: object, callback: (createError: string | boolean) => void) => {
         const directoryPath = `${lib.baseDir}/${directory}`;
         // Open file for writing
         if(!fs.existsSync(directoryPath)) {
@@ -49,7 +49,7 @@ const lib = {
     },
 
     // Read data from a file
-    read: (directory: string, filename: string, callback: (err: ErrnoException | null, readedData: any) => void) => {
+    read: (directory: 'users' | 'tokens' | string, filename: string, callback: (readError: ErrnoException | null, readedData: any) => void) => {
         fs.readFile(`${lib.baseDir}/${directory}/${filename}.json`, 'utf-8', (readFileError, readedData) => {
             if(readFileError) {
                 callback(readFileError, readedData);
@@ -60,7 +60,7 @@ const lib = {
     },
 
     // Update data inside a file
-    update: (directory: string, filename: string, data: object, callback: (result: string | boolean) => void) => {
+    update: (directory: string, filename: string, data: object, callback: (updateError: string | boolean) => void) => {
         // Open the file for writing
         fs.open(`${lib.baseDir}/${directory}/${filename}.json`, 'r+', (openError, fd) => {
             if(openError) {
@@ -98,7 +98,7 @@ const lib = {
     },
 
     // Delete a file
-    delete: (directory: string, filename: string, callback: (result: string | boolean) => void) => {
+    delete: (directory: string, filename: string, callback: (deleteError: string | boolean) => void) => {
         // Unlink the file
         fs.unlink(`${lib.baseDir}/${directory}/${filename}.json`, err => {
             if(err) {

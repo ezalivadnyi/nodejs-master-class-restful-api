@@ -2,18 +2,12 @@
  * Request router handlers
  */
 
-import config from "../config";
-import helpers from './helpers';
-import _data from './data';
 import {
-    IHttpMethodHandler,
-    IRouter, IRouterHandler, IToken,
-    IUser,
+    IRouterHandler,
 } from "../Interfaces";
 import {tokensModule} from "../modules/tokens";
 import {usersModule} from "../modules/users";
-
-
+import checksModule from "../modules/checksModule";
 
 // Define the router routerHandlers
 const routerHandlers: IRouterHandler = {
@@ -49,11 +43,13 @@ const routerHandlers: IRouterHandler = {
 
     // check handler
     checks: (requestData, responseCallback) => {
-
+        const acceptableMethods = ['get', 'post', 'put', 'delete'];
+        if(acceptableMethods.includes(requestData.method)) {
+            checksModule[requestData.method](requestData, responseCallback);
+        } else {
+            responseCallback(405, {message: `${requestData.method} method is not allowed!`});
+        }
     },
 }
 
-
-
-
-export default router;
+export default routerHandlers;

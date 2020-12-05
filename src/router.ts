@@ -7,6 +7,7 @@ const router: IRouter = {
     'ping': routerHandlers.ping,
     'users': routerHandlers.users,
     'tokens': routerHandlers.tokens,
+    'checks': routerHandlers.checks,
 };
 
-export default router
+export default router;
