@@ -15,14 +15,14 @@ interface IEnvironments{
 const environments: IEnvironments = {
     staging: {
         portHttp: 3000,
-        portHttps: 3001,
+        portHttps: 0,
         envName: 'staging',
         hashingSecret: 'try to guess me:)',
         maxChecks: 5,
     },
     production: {
         portHttp: 5000,
-        portHttps: 5001,
+        portHttps: 0,
         envName: 'production',
         hashingSecret: 'try to guess meeeeeeee:)',
         maxChecks: 5,

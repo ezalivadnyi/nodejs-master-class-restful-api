@@ -1,13 +1,13 @@
-import { THttpMethodHandler, IUser } from "../Interfaces";
 import config from "../config";
-import _data from "../lib/data";
-import helpers from "../lib/helpers";
-import checkers from "../lib/checkers";
 import { PHONE_LENGTH } from "../constants";
+import { IUser, THttpMethodHandler } from "../Interfaces";
+import _data from "../lib/data";
+import checkers from "../lib/fieldsCheckers";
+import helpers from "../lib/helpers";
 
 export const usersModule: THttpMethodHandler = {
     get: (requestData, responseCallback) => {
-        const phone = checkers.phone(requestData.queryStringObject.phone);
+        const phone = checkers.userPhone(requestData.queryStringObject.phone);
         // Get the token from the headers
         const token = checkers.token(requestData.headers.token);
         if (!token) {
@@ -40,7 +40,7 @@ export const usersModule: THttpMethodHandler = {
         // Check the all required fields are filled out
         const firstName = checkers.firstName(requestData.payload.firstName);
         const lastName = checkers.lastName(requestData.payload.lastName);
-        const phone = checkers.phone(requestData.payload.phone);
+        const phone = checkers.userPhone(requestData.payload.phone);
         const password = checkers.password(requestData.payload.password);
         const tosAgreement = checkers.tosAgreement(requestData.payload.tosAgreement);
 
@@ -93,7 +93,7 @@ export const usersModule: THttpMethodHandler = {
         if (config.envName === 'staging') { console.log(`\n/users PUT payload: `, requestData.payload); }
 
         const token = typeof (requestData.headers.token) === "string" ? requestData.headers.token : '';
-        let phone = checkers.phone(requestData.payload.phone);
+        let phone = checkers.userPhone(requestData.payload.phone);
 
         if (!token) {
             responseCallback(400, { message: `Missing required token in header` })
@@ -142,15 +142,11 @@ export const usersModule: THttpMethodHandler = {
         }
     },
     delete: (requestData, responseCallback) => {
-        // TODO: only let an authenticated user to delete their own profile. Don't let delete anyone else's
-        // TODO: Cleanup any other data files associated with this user
-
-
         // Get the token from the headers
         const token = typeof (requestData.headers.token) === "string" ? requestData.headers.token : '';
 
         // Check phone is valid
-        const phone = checkers.phone(requestData.queryStringObject.phone);
+        const phone = checkers.userPhone(requestData.queryStringObject.phone);
         if (!token) {
             responseCallback(400, { message: `Missing required token in header` })
         } else if (!phone) {
@@ -161,7 +157,7 @@ export const usersModule: THttpMethodHandler = {
                     responseCallback(403, { message: `Token is invalid` })
                 } else {
                     // Lookup the user
-                    _data.read('users', phone, (readError, userData) => {
+                    _data.read('users', phone, (readError, userData: IUser) => {
                         if (readError) {
                             responseCallback(404, { message: 'User with this phone not found' })
                         } else {
@@ -171,7 +167,32 @@ export const usersModule: THttpMethodHandler = {
                                     console.error(err);
                                     responseCallback(500, { message: `Couldn't delete the specified user` })
                                 } else {
-                                    responseCallback(200, { message: 'User successfully deleted!' })
+                                    const userChecks = checkers.userChecks(userData);
+                                    const checksToDelete = userChecks.length;
+                                    if (checksToDelete > 0) {
+                                        let checksDeleted = 0;
+                                        let deletionErrors = false;
+                                        let erroredChecks: string[] = [];
+                                        userChecks.forEach(checkId => {
+                                            _data.delete('checks', checkId, deleteError => {
+                                                if (deleteError) {
+                                                    deletionErrors = true;
+                                                    erroredChecks.push(checkId);
+                                                }
+                                                checksDeleted++;
+                                                if (checksDeleted === checksToDelete) {
+                                                    if (deletionErrors) {
+                                                        // TODO: log erroredChecks
+                                                        responseCallback(500, { message: `Errors encountered while attempting to delete all of the user's checks. All checks may not have been deleted from the system successfuly. Errored checks: ${erroredChecks.join(', ')}` });
+                                                    } else {
+                                                        responseCallback(200, { message: `User successfully deleted! Checks deleted: ${checksDeleted}` });
+                                                    }
+                                                }
+                                            })
+                                        })
+                                    } else {
+                                        responseCallback(200, { message: 'User successfully deleted!' })
+                                    }
                                 }
                             })
                         }

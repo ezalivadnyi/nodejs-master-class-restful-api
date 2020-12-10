@@ -1,9 +1,9 @@
 //@ts-check
-import { THttpMethodHandler, IToken, IUser } from "../Interfaces";
-import _data from "../lib/data";
 import config from "../config";
+import { IToken, IUser, THttpMethodHandler } from "../Interfaces";
+import _data from "../lib/data";
+import checkers from "../lib/fieldsCheckers";
 import helpers from "../lib/helpers";
-import checkers from "../lib/checkers";
 
 export const tokensModule: THttpMethodHandler = {
     get: (requestData, responseCallback) => {
@@ -27,7 +27,7 @@ export const tokensModule: THttpMethodHandler = {
     post: (requestData, responseCallback) => {
         if (config.envName === 'staging') { console.log('\n/users POST payload:', requestData.payload); }
 
-        const phone = checkers.phone(requestData.payload.phone);
+        const phone = checkers.userPhone(requestData.payload.phone);
         let password = requestData.payload.password;
         password = typeof (password) === 'string' && password.trim().length > 7 ? password.trim() : "";
         if (!phone || !password) {
@@ -98,15 +98,14 @@ export const tokensModule: THttpMethodHandler = {
 
     delete: (requestData, responseCallback) => {
         // Check id is valid
-        let id = requestData.queryStringObject.id;
-        id = typeof (id) === 'string' && id.trim().length === 20 ? id.trim() : false;
+        const id = checkers.token(requestData.queryStringObject.id);
         if (!id) {
             responseCallback(400, { message: 'Missing required field. Please specify the id in GET parameter.' })
         } else {
             // Lookup the user
             _data.read('tokens', id, (readTokenError, tokenData: IToken) => {
                 if (readTokenError) {
-                    responseCallback(404, { message: 'Token with this id not found' })
+                    responseCallback(404, { message: `Can't find token with id ${id}` })
                 } else {
                     // Remove the hashed password from the user object before returning it to the requester
                     _data.delete('tokens', id, (deleteTokenError) => {

@@ -1,12 +1,12 @@
 import crypto from 'crypto';
-import _data from "./data";
-import {IToken} from "../Interfaces";
 import config from "../config";
+import { IToken } from "../Interfaces";
+import _data from "./data";
 
 const helpers = {
     // Create a SHA256 hash
     hashPassword: (str: string) => {
-        if(str && str.length > 0) {
+        if (str && str.length > 0) {
             return crypto.createHmac('sha256', config.hashingSecret).update(str).digest('hex');
         }
         return undefined;
@@ -23,10 +23,10 @@ const helpers = {
     },
 
     objectToStrings: (obj: object) => {
-        if(obj.constructor === Object && Object.keys(obj).length) {
+        if (obj.constructor === Object && Object.keys(obj).length) {
             let result = '';
-            for(const [key, value] of Object.entries(obj)) {
-                result +=`\t${key}: ${value}\n`
+            for (const [key, value] of Object.entries(obj)) {
+                result += `\t${key}: ${value}\n`
             }
             return result;
         } else {
@@ -35,12 +35,12 @@ const helpers = {
     },
 
     createRandomString(length: number) {
-        length = typeof(length) === 'number' && length > 0 ? length : 0;
-        if(length) {
+        length = typeof (length) === 'number' && length > 0 ? length : 0;
+        if (length) {
             // Define all possible characters that could go into a string
             const possibleCharacters = 'abcdefghijklmnopqrstuvwxyz0123456789';
             let result = '';
-            for(let i = 1; i <= length; i++) {
+            for (let i = 1; i <= length; i++) {
                 result += possibleCharacters.charAt(Math.floor(Math.random() * possibleCharacters.length));
             }
             return result;
@@ -50,25 +50,24 @@ const helpers = {
 
     // Verify if a given token id is currently valid for a given user
     verifyToken: (tokenId: string, phone: string, callback: (tokenIsValid: boolean) => void) => {
-        if(tokenId) {
+        if (!tokenId) {
+            callback(false);
+        } else {
             // Lookup the token
-            _data.read('tokens', tokenId, (readError, readedTokenData: IToken) => {
-                if(readError) {
+            _data.read('tokens', tokenId, (readError, tokenData: IToken) => {
+                if (readError) {
                     callback(false);
                 } else {
                     // Check that the token is for the given user and has not expired
-                    if(readedTokenData.phone === phone && readedTokenData.expires > Date.now()) {
+                    if (tokenData.phone === phone && tokenData.expires > Date.now()) {
                         callback(true);
                     } else {
                         callback(false);
                     }
                 }
             })
-        } else {
-            callback(false);
         }
     },
-
 }
 
 export default helpers;
