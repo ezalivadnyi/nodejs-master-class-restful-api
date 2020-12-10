@@ -1,8 +1,8 @@
 //@ts-check
 import config from "../config";
 import { IToken, IUser, THttpMethodHandler } from "../Interfaces";
-import _data from "../lib/data";
 import checkers from "../lib/fieldsCheckers";
+import _data from "../lib/fsDataCRUD";
 import helpers from "../lib/helpers";
 
 export const tokensModule: THttpMethodHandler = {

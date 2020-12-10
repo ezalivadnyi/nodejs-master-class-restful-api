@@ -1,8 +1,8 @@
 import config from "../config";
 import { PHONE_LENGTH } from "../constants";
 import { IUser, THttpMethodHandler } from "../Interfaces";
-import _data from "../lib/data";
 import checkers from "../lib/fieldsCheckers";
+import _data from "../lib/fsDataCRUD";
 import helpers from "../lib/helpers";
 
 export const usersModule: THttpMethodHandler = {

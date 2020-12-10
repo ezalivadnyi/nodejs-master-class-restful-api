@@ -1,7 +1,7 @@
 import { CHECKS_ID_LENGTH, MAX_CHECKS_PER_USER } from "../constants";
 import { ICheck, IToken, IUser, THttpMethodHandler } from "../Interfaces";
-import _data from "../lib/data";
 import checkers from "../lib/fieldsCheckers";
+import _data from "../lib/fsDataCRUD";
 import helpers from "../lib/helpers";
 
 const checksModule: THttpMethodHandler = {

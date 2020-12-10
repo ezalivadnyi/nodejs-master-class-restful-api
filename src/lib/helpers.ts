@@ -1,7 +1,7 @@
 import crypto from 'crypto';
 import config from "../config";
 import { IToken } from "../Interfaces";
-import _data from "./data";
+import _data from "./fsDataCRUD";
 
 const helpers = {
     // Create a SHA256 hash
