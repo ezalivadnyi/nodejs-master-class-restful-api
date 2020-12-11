@@ -1,5 +1,5 @@
 //@ts-check
-import config from "../config";
+import env from "../env";
 import { IToken, IUser, THttpMethodHandler } from "../Interfaces";
 import checkers from "../lib/fieldsCheckers";
 import _data from "../lib/fsDataCRUD";
@@ -25,7 +25,7 @@ export const tokensModule: THttpMethodHandler = {
     },
 
     post: (requestData, responseCallback) => {
-        if (config.envName === 'staging') { console.log('\n/users POST payload:', requestData.payload); }
+        if (env.ENVIRONMENT_NAME === 'staging') { console.log('\n/users POST payload:', requestData.payload); }
 
         const phone = checkers.userPhone(requestData.payload.phone);
         let password = requestData.payload.password;

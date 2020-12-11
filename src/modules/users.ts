@@ -1,5 +1,5 @@
-import config from "../config";
 import { PHONE_LENGTH } from "../constants";
+import env from "../env";
 import { IUser, THttpMethodHandler } from "../Interfaces";
 import checkers from "../lib/fieldsCheckers";
 import _data from "../lib/fsDataCRUD";
@@ -36,7 +36,7 @@ export const usersModule: THttpMethodHandler = {
         }
     },
     post: (requestData, responseCallback) => {
-        if (config.envName === 'staging') { console.log('\n/users POST payload:', requestData.payload); }
+        if (env.ENVIRONMENT_NAME === 'staging') { console.log('\n/users POST payload:', requestData.payload); }
         // Check the all required fields are filled out
         const firstName = checkers.firstName(requestData.payload.firstName);
         const lastName = checkers.lastName(requestData.payload.lastName);
@@ -90,7 +90,7 @@ export const usersModule: THttpMethodHandler = {
         }
     },
     put: (requestData, responseCallback) => {
-        if (config.envName === 'staging') { console.log(`\n/users PUT payload: `, requestData.payload); }
+        if (env.ENVIRONMENT_NAME === 'staging') { console.log(`\n/users PUT payload: `, requestData.payload); }
 
         const token = typeof (requestData.headers.token) === "string" ? requestData.headers.token : '';
         let phone = checkers.userPhone(requestData.payload.phone);

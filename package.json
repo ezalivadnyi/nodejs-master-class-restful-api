@@ -4,17 +4,20 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "start": "nodemon --inspect=5858 -e ts,tsx --exec node -r ts-node/register ./src/index.ts"
+    "start": "nodemon --inspect=5858 -e ts,tsx --exec node --require dotenv/config -r ts-node/register ./src/index.ts"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "devDependencies": {
+    "@types/dotenv": "^8.2.0",
     "@types/node": "^14.14.10",
     "nodemon": "^2.0.6",
     "ts-node": "^9.1.1",
     "tslint": "^6.1.3",
     "typescript": "^4.1.2"
   },
-  "dependencies": {}
+  "dependencies": {
+    "dotenv": "^8.2.0"
+  }
 }
