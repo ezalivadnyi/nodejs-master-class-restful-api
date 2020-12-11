@@ -21,15 +21,25 @@ if (!env.HASHING_SECRET) {
     exit();
 }
 
+if (!env.HOST) {
+    console.error('ERROR! PLEASE PROVIDE HOST IN .env FILE!');
+    exit();
+}
+
+if (!env.PORT_HTTPS && !env.PORT_HTTP) {
+    console.error('ERROR! PLEASE PROVIDE PORT_HTTP AND/OR PORT_HTTPS IN .env FILE!');
+    exit();
+}
+
 if (env.HOST && env.PORT_HTTP) {
     // The HTTP server should respond only to HTTP requests
     const serverHttp = http.createServer((req, res) => {
         unifiedServer(req, res);
-    })
+    });
     // Start the server, and have it listen on port PORT_HTTP
-    serverHttp.listen(env.PORT_HTTP, () => {
+    serverHttp.listen(+env.PORT_HTTP, env.HOST, () => {
         console.info(`HTTP Server is listening on http://${env.HOST}:${env.PORT_HTTP}.`);
-    })
+    });
 }
 
 if (env.HOST && env.PORT_HTTPS) {
@@ -40,21 +50,11 @@ if (env.HOST && env.PORT_HTTPS) {
     };
     const serverHttps = https.createServer(serverHttpsOptions, (req, res) => {
         unifiedServer(req, res);
-    })
+    });
     // Start the server, and have it listen on port env.PORT_HTTPS
-    serverHttps.listen(env.PORT_HTTPS, () => {
+    serverHttps.listen(+env.PORT_HTTPS, env.HOST, () => {
         console.info(`HTTPS Server is listening on https://${env.HOST}:${env.PORT_HTTPS}.`);
-    })
-}
-
-if (!env.HOST) {
-    console.error('ERROR! PLEASE PROVIDE HOST IN .env FILE!');
-    exit();
-}
-
-if (!env.PORT_HTTPS && !env.PORT_HTTP) {
-    console.error('ERROR! PLEASE PROVIDE PORT_HTTP AND/OR PORT_HTTPS IN .env FILE!');
-    exit();
+    });
 }
 
 // All the server logic for both the http and https server
@@ -108,11 +108,9 @@ const unifiedServer = (req: http.IncomingMessage, res: http.ServerResponse) => {
                         console.log('buffer payload:', helpers.jsonToObject(buffer))
                     }
                     console.log();
-
-                }
+                };
 
                 chosenHandler(requestData, (statusCode: number | undefined, responsePayload: object | undefined) => {
-
                     // Use the payload callback back by the handler, or default to an empty object
                     // Convert the payload to a string_decoder
                     const payloadString = JSON.stringify(typeof (responsePayload) === 'object' ? responsePayload : {});
@@ -120,11 +118,8 @@ const unifiedServer = (req: http.IncomingMessage, res: http.ServerResponse) => {
                     // Use the status code called back by the handler, or default to 200
                     res.writeHead(typeof (statusCode) === 'number' ? statusCode : 200);
                     res.end(payloadString);
-                })
-
-            })
-        }
-
-    }
-
-}
+                });
+            });
+        };
+    };
+};
