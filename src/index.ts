@@ -9,17 +9,9 @@ import { IRequestData } from "./Interfaces";
 import helpers from './lib/helpers';
 import router from './router';
 
-helpers.sendTwilioSMS('380955371931', 'Hello', (err) => {
-    if (err) {
-        console.log(`sendTwilioSMS has errors:`, err)
-    } else {
-        console.log(`sendTwilioSMS OK`);
-
-    }
-})
-
 if (!env.ENVIRONMENT_NAME) {
     console.error('ERROR! PLEASE PROVIDE ENVIRONMENT_NAME IN .env FILE!');
+    exit();
 } else {
     console.log(`Environment mode = ${env.ENVIRONMENT_NAME}.`);
 }
