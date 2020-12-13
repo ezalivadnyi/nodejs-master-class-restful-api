@@ -48,11 +48,25 @@ export interface IToken {
 }
 
 export interface ICheck {
-    'id': string,
-    'userPhone': string,
-    'protocol': 'http' | 'https' | string,
-    'url': string,
-    'method': 'get' | 'post' | 'put' | 'delete' | string,
-    'successCodes': number[],
-    'timeoutSeconds': number,
+    id: string,
+    userPhone: string,
+    protocol: 'http' | 'https' | string,
+    url: string,
+    method: 'get' | 'post' | 'put' | 'delete' | string,
+    successCodes: number[],
+    timeoutSeconds: number,
+    state?: 'up' | 'down' | string | undefined,
+    lastChecked?: number | undefined,
+}
+
+export interface ICheckOutcome {
+    error: undefined | {
+        error: boolean,
+        value: Error | 'timeout'
+    },
+    responseCode: number | undefined
+}
+
+export type TDataDirs = {
+    [key: string]: 'users' | 'tokens' | 'checks' | string
 }

@@ -6,13 +6,13 @@ import helpers from "../lib/helpers";
 
 const checksModule: THttpMethodHandler = {
     post: (requestData, responseCallback) => {
-        const protocol = checkers.protocol(requestData.payload.protocol);
-        const url = checkers.url(requestData.payload.url);
-        const method = checkers.method(requestData.payload.method);
-        const successCodes = checkers.successCodes(requestData.payload.successCodes);
-        const timeoutSeconds = checkers.timeoutSeconds(requestData.payload.timeoutSeconds);
+        const protocol = checkers.checks.protocol(requestData.payload.protocol);
+        const url = checkers.checks.url(requestData.payload.url);
+        const method = checkers.checks.method(requestData.payload.method);
+        const successCodes = checkers.checks.successCodes(requestData.payload.successCodes);
+        const timeoutSeconds = checkers.checks.timeout(requestData.payload.timeoutSeconds);
 
-        const token = checkers.token(requestData.headers.token);
+        const token = checkers.user.token(requestData.headers.token);
         if (!token) {
             responseCallback(400, { message: `Token missing` })
         } else {
@@ -23,42 +23,49 @@ const checksModule: THttpMethodHandler = {
                     if (readTokenError) {
                         responseCallback(403, { message: `Token didn't exist` })
                     } else {
-                        _data.read('users', tokenData.phone, (err, userData: IUser) => {
-                            if (err) {
-                                responseCallback(404, { message: `User didn't exist` })
-                            } else {
-                                const userChecks = checkers.userChecks(userData);
-                                const checkId = helpers.createRandomString(CHECKS_ID_LENGTH);
-                                if (userChecks.length < MAX_CHECKS_PER_USER) {
-                                    const checkObject: ICheck = {
-                                        'id': checkId,
-                                        'userPhone': tokenData.phone,
-                                        'protocol': protocol,
-                                        'url': url,
-                                        'method': method,
-                                        'successCodes': successCodes,
-                                        'timeoutSeconds': timeoutSeconds,
-                                    };
-                                    _data.create('checks', checkId, checkObject, (err) => {
-                                        if (err) {
-                                            responseCallback(500, { message: `Couldn't create the new check` })
-                                        } else {
-                                            userData.checks = userChecks;
-                                            userData.checks.push(checkId);
-                                            _data.update('users', tokenData.phone, userData, (updateUserError => {
-                                                if (updateUserError) {
-                                                    responseCallback(500, { message: `Couldn't update the user with the new check` });
-                                                } else {
-                                                    responseCallback(200, checkObject);
-                                                }
-                                            }))
-                                        }
-                                    })
+                        if (tokenData.expires <= Date.now()) {
+                            responseCallback(403, { message: `Token expired :(` })
+                        } else {
+
+                            _data.read('users', tokenData.phone, (err, userData: IUser) => {
+                                if (err) {
+                                    responseCallback(404, { message: `User didn't exist` })
                                 } else {
-                                    responseCallback(400, { message: `The user already has the maximum number of checks (${MAX_CHECKS_PER_USER})` })
+                                    const userChecks = checkers.checks.userChecks(userData);
+                                    const checkId = helpers.createRandomString(CHECKS_ID_LENGTH);
+                                    if (userChecks.length < MAX_CHECKS_PER_USER) {
+                                        const checkObject: ICheck = {
+                                            'id': checkId,
+                                            'userPhone': tokenData.phone,
+                                            'protocol': protocol,
+                                            'url': url,
+                                            'method': method,
+                                            'successCodes': successCodes,
+                                            'timeoutSeconds': timeoutSeconds,
+                                        };
+                                        _data.create('checks', checkId, checkObject, (err) => {
+                                            if (err) {
+                                                responseCallback(500, { message: `Couldn't create the new check` })
+                                            } else {
+                                                userData.checks = userChecks;
+                                                userData.checks.push(checkId);
+                                                _data.update('users', tokenData.phone, userData, (updateUserError => {
+                                                    if (updateUserError) {
+                                                        responseCallback(500, { message: `Couldn't update the user with the new check` });
+                                                    } else {
+                                                        responseCallback(200, checkObject);
+                                                    }
+                                                }))
+                                            }
+                                        })
+                                    } else {
+                                        responseCallback(400, { message: `The user already has the maximum number of checks (${MAX_CHECKS_PER_USER})` })
+                                    }
                                 }
-                            }
-                        })
+                            })
+
+                        }
+
                     }
                 })
             }
@@ -66,9 +73,9 @@ const checksModule: THttpMethodHandler = {
         }
     },
     get: (requestData, responseCallback) => {
-        const checkId = checkers.checksId(requestData.queryStringObject.id);
+        const checkId = checkers.checks.id(requestData.queryStringObject.id);
         // Get the token from the headers
-        const token = checkers.token(requestData.headers.token);
+        const token = checkers.user.token(requestData.headers.token);
         if (!token) {
             responseCallback(400, { message: `Missing required token in header` })
         } else if (!checkId) {
@@ -92,12 +99,12 @@ const checksModule: THttpMethodHandler = {
         }
     },
     put: (requestData, responseCallback) => {
-        const checkId = checkers.checksId(requestData.payload.id);
-        const protocol = checkers.protocol(requestData.payload.protocol);
-        const url = checkers.url(requestData.payload.url);
-        const method = checkers.method(requestData.payload.method);
-        const successCodes = checkers.successCodes(requestData.payload.successCodes);
-        const timeoutSeconds = checkers.timeoutSeconds(requestData.payload.timeoutSeconds);
+        const checkId = checkers.checks.id(requestData.payload.id);
+        const protocol = checkers.checks.protocol(requestData.payload.protocol);
+        const url = checkers.checks.url(requestData.payload.url);
+        const method = checkers.checks.method(requestData.payload.method);
+        const successCodes = checkers.checks.successCodes(requestData.payload.successCodes);
+        const timeoutSeconds = checkers.checks.timeout(requestData.payload.timeoutSeconds);
 
         if (!checkId) {
             responseCallback(400, { message: 'Missing required field. Please specify the checks id number in GET parameter.' })
@@ -109,7 +116,7 @@ const checksModule: THttpMethodHandler = {
                     if (readChecksError) {
                         responseCallback(404, { message: `Couldn't find checks with provided id` });
                     } else {
-                        const token = checkers.token(requestData.headers.token);
+                        const token = checkers.user.token(requestData.headers.token);
                         helpers.verifyToken(token, readedChecksData.userPhone, (tokenIsValid) => {
                             if (!tokenIsValid) {
                                 responseCallback(403, { message: `Token is invalid` })
@@ -135,8 +142,8 @@ const checksModule: THttpMethodHandler = {
         }
     },
     delete: (requestData, responseCallback) => {
-        const tokenId = checkers.token(requestData.headers.token);
-        const checkId = checkers.checksId(requestData.queryStringObject.id);
+        const tokenId = checkers.user.token(requestData.headers.token);
+        const checkId = checkers.checks.id(requestData.queryStringObject.id);
         if (!tokenId) {
             responseCallback(400, { message: 'Missing required header. Please provide the token ID.' })
         } else if (!checkId) {
@@ -160,7 +167,7 @@ const checksModule: THttpMethodHandler = {
                                         if (err) {
                                             responseCallback(500, { message: `Couldn't find the user who created the check, so could not remove the check from the list of checks on the user object` });
                                         } else {
-                                            const userChecks = checkers.userChecks(userData);
+                                            const userChecks = checkers.checks.userChecks(userData);
                                             const checkPosition = userChecks.indexOf(checkId);
                                             if (checkPosition === -1) {
                                                 responseCallback(500, { message: `Couldn't find the check on the user's object, so couldn't remove it` });

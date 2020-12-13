@@ -48,7 +48,7 @@ const lib = {
     },
 
     // Read data from a file
-    read: (directory: 'users' | 'tokens' | string, filename: string, callback: (readError: ErrnoException | null, readedData: any) => void) => {
+    read: (directory: 'users' | 'tokens' | 'checks' | string, filename: string, callback: (readError: ErrnoException | null, readedData: any) => void) => {
         fs.readFile(`${lib.pathToDataDirectory}/${directory}/${filename}.json`, 'utf-8', (readFileError, readedData) => {
             if (readFileError) {
                 callback(readFileError, readedData);
@@ -59,7 +59,7 @@ const lib = {
     },
 
     // Update data inside a file
-    update: (directory: string, filename: string, data: object, callback: (updateError: string | boolean) => void) => {
+    update: (directory: 'users' | 'tokens' | 'checks' | string, filename: string, data: object, callback: (updateError: string | boolean) => void) => {
         // Open the file for writing
         fs.open(`${lib.pathToDataDirectory}/${directory}/${filename}.json`, 'r+', (openError, fd) => {
             if (openError) {
@@ -97,7 +97,7 @@ const lib = {
     },
 
     // Delete a file
-    delete: (directory: string, filename: string, callback: (deleteError: string | boolean) => void) => {
+    delete: (directory: 'users' | 'tokens' | 'checks' | string, filename: string, callback: (deleteError: string | boolean) => void) => {
         // Unlink the file
         fs.unlink(`${lib.pathToDataDirectory}/${directory}/${filename}.json`, err => {
             if (err) {
@@ -106,10 +106,23 @@ const lib = {
             } else {
                 callback(false);
             }
+        });
+    },
+
+    list: (directory: 'users' | 'tokens' | 'checks' | string, callback: (err: ErrnoException | boolean, checksFilenames: string[]) => void) => {
+        fs.readdir(`${lib.pathToDataDirectory}/${directory}`, (err, files) => {
+            if (err) {
+                callback(err, files);
+            } else {
+                const trimmedFilenames: string[] = [];
+                files.forEach((filename) => {
+                    trimmedFilenames.push(filename.replace('.json', ''));
+                });
+                callback(false, trimmedFilenames);
+            }
         })
     }
 
-}; // END lib
+};
 
-// Export the module
 export default lib;

@@ -7,9 +7,9 @@ import helpers from "../lib/helpers";
 
 export const usersModule: THttpMethodHandler = {
     get: (requestData, responseCallback) => {
-        const phone = checkers.userPhone(requestData.queryStringObject.phone);
+        const phone = checkers.user.phone(requestData.queryStringObject.phone);
         // Get the token from the headers
-        const token = checkers.token(requestData.headers.token);
+        const token = checkers.user.token(requestData.headers.token);
         if (!token) {
             responseCallback(400, { message: `Missing required token in header` })
         } else if (!phone) {
@@ -38,11 +38,11 @@ export const usersModule: THttpMethodHandler = {
     post: (requestData, responseCallback) => {
         if (env.ENVIRONMENT_NAME === 'staging') { console.log('\n/users POST payload:', requestData.payload); }
         // Check the all required fields are filled out
-        const firstName = checkers.firstName(requestData.payload.firstName);
-        const lastName = checkers.lastName(requestData.payload.lastName);
-        const phone = checkers.userPhone(requestData.payload.phone);
-        const password = checkers.password(requestData.payload.password);
-        const tosAgreement = checkers.tosAgreement(requestData.payload.tosAgreement);
+        const firstName = checkers.user.firstName(requestData.payload.firstName);
+        const lastName = checkers.user.lastName(requestData.payload.lastName);
+        const phone = checkers.user.phone(requestData.payload.phone);
+        const password = checkers.user.password(requestData.payload.password);
+        const tosAgreement = checkers.user.tosAgreement(requestData.payload.tosAgreement);
 
         if (!firstName && !lastName && !phone && !password && !tosAgreement) {
             responseCallback(400, { message: 'Missing required fields.' });
@@ -93,7 +93,7 @@ export const usersModule: THttpMethodHandler = {
         if (env.ENVIRONMENT_NAME === 'staging') { console.log(`\n/users PUT payload: `, requestData.payload); }
 
         const token = typeof (requestData.headers.token) === "string" ? requestData.headers.token : '';
-        let phone = checkers.userPhone(requestData.payload.phone);
+        let phone = checkers.user.phone(requestData.payload.phone);
 
         if (!token) {
             responseCallback(400, { message: `Missing required token in header` })
@@ -146,7 +146,7 @@ export const usersModule: THttpMethodHandler = {
         const token = typeof (requestData.headers.token) === "string" ? requestData.headers.token : '';
 
         // Check phone is valid
-        const phone = checkers.userPhone(requestData.queryStringObject.phone);
+        const phone = checkers.user.phone(requestData.queryStringObject.phone);
         if (!token) {
             responseCallback(400, { message: `Missing required token in header` })
         } else if (!phone) {
@@ -167,7 +167,7 @@ export const usersModule: THttpMethodHandler = {
                                     console.error(err);
                                     responseCallback(500, { message: `Couldn't delete the specified user` })
                                 } else {
-                                    const userChecks = checkers.userChecks(userData);
+                                    const userChecks = checkers.checks.userChecks(userData);
                                     const checksToDelete = userChecks.length;
                                     if (checksToDelete > 0) {
                                         let checksDeleted = 0;

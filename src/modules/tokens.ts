@@ -27,7 +27,7 @@ export const tokensModule: THttpMethodHandler = {
     post: (requestData, responseCallback) => {
         if (env.ENVIRONMENT_NAME === 'staging') { console.log('\n/users POST payload:', requestData.payload); }
 
-        const phone = checkers.userPhone(requestData.payload.phone);
+        const phone = checkers.user.phone(requestData.payload.phone);
         let password = requestData.payload.password;
         password = typeof (password) === 'string' && password.trim().length > 7 ? password.trim() : "";
         if (!phone || !password) {
@@ -98,7 +98,7 @@ export const tokensModule: THttpMethodHandler = {
 
     delete: (requestData, responseCallback) => {
         // Check id is valid
-        const id = checkers.token(requestData.queryStringObject.id);
+        const id = checkers.user.token(requestData.queryStringObject.id);
         if (!id) {
             responseCallback(400, { message: 'Missing required field. Please specify the id in GET parameter.' })
         } else {

@@ -73,7 +73,7 @@ const helpers = {
     },
 
     sendTwilioSMS: (phoneNumber: string, message: string, callback: (err: any) => void) => {
-        phoneNumber = checkers.userPhone(phoneNumber);
+        phoneNumber = checkers.user.phone(phoneNumber);
         message = typeof message === 'string' && message.trim().length > 0 && message.trim().length <= 1600 ? message.trim() : '';
         if (!phoneNumber) {
             callback('Given phoneNumber were missing or invalid. Phone must be 10 sign length without + sign.');
@@ -81,7 +81,7 @@ const helpers = {
             callback('Given message were missing or invalid. Message length must be less then 1600 characters.');
         } else {
             const payload = querystring.stringify({
-                'From': env.TWILIO_FROM_PHONE,
+                'From': env.TWILIO.FROM_PHONE,
                 'To': '+' + phoneNumber,
                 'Body': message
             });
@@ -90,8 +90,8 @@ const helpers = {
                 'protocol': 'https:',
                 'hostname': 'api.twilio.com',
                 'method': 'POST',
-                'path': `/2010-04-01/Accounts/${env.TWILIO_ACCOUNT_SID}/Messages.json`,
-                'auth': `${env.TWILIO_ACCOUNT_SID}:${env.TWILIO_AUTH_TOKEN}`,
+                'path': `/2010-04-01/Accounts/${env.TWILIO.ACCOUNT_SID}/Messages.json`,
+                'auth': `${env.TWILIO.ACCOUNT_SID}:${env.TWILIO.AUTH_TOKEN}`,
                 'headers': {
                     'Content-Type': 'application/x-www-form-urlencoded',
                     'Content-Length': Buffer.byteLength(payload),
@@ -106,9 +106,9 @@ const helpers = {
                 }
             });
             if (env.ENVIRONMENT_NAME === 'staging') {
-                console.log(`sendTwilioSMS payload`, payload);
-                console.log(`sendTwilioSMS requestOptions`, requestOptions);
-                console.log(`sendTwilioSMS req`, req);
+                //console.log(`sendTwilioSMS payload`, payload);
+                //console.log(`sendTwilioSMS requestOptions`, requestOptions);
+                //console.log(`sendTwilioSMS req`, req);
             }
             req.on('error', (requestError) => {
                 console.error(`sendTwilioSMS request errored:`, requestError);
