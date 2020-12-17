@@ -3,5 +3,6 @@
 /node_modules
 /https
 /.data
+/.logs
 /build
 .env

@@ -9,11 +9,52 @@ import helpers from './helpers';
 import env from '../env';
 import { ICheck, ICheckOutcome } from '../Interfaces';
 import checkers from './fieldsCheckers';
+import logs from './logs';
 
 const workers = {
     init: () => {
         workers.gatherAllCheks();
         workers.loop();
+        workers.rotateLogs();
+        workers.logRotationLoop();
+    },
+    loop: () => {
+        console.log(`Workers loop interval = ${env.WORKERKS_LOOP_INTERVAL_MILISECONDS / 1000} seconds.`);
+        setInterval(() => {
+            workers.gatherAllCheks();
+        }, env.WORKERKS_LOOP_INTERVAL_MILISECONDS);
+    },
+    logRotationLoop: () => {
+        setInterval(() => {
+            workers.rotateLogs();
+        }, 1000 * 60 * 60 * 24);
+    },
+    rotateLogs: () => {
+        logs.list(false, (err, nonCompressedlogs) => {
+            if (err) {
+                console.error(err);
+            } else {
+                nonCompressedlogs.forEach(log => {
+
+                    const logId = log.replace('.log', '');
+                    const newFileId = logId + '-' + Date.now();
+                    logs.compress(logId, newFileId, err => {
+                        if (err) {
+                            console.error(`Error compressing on of the files`, err);
+                        } else {
+                            logs.truncate(logId, err => {
+                                if (err) {
+                                    console.error(`Error truncating log file`, logId);
+                                } else {
+                                    console.log(`Success truncating log file`, logId);
+                                }
+                            })
+                        }
+                    })
+                });
+            }
+
+        });
     },
     gatherAllCheks: () => {
         _data.list('checks', (err, checksFilenames) => {
@@ -25,6 +66,8 @@ const workers = {
                     const time = `${date.getHours()}:${date.getMinutes()}:${date.getSeconds()}`;
                     console.error(`${time} couldn't find any checks to process`);
                 } else {
+                    console.log(`\nFounded checks: ${checksFilenames.length}.`);
+
                     checksFilenames.forEach(checkFilename => {
                         _data.read('checks', checkFilename, (readError, checkData: ICheck) => {
                             if (readError) {
@@ -38,12 +81,23 @@ const workers = {
             }
         })
     },
-    loop: () => {
-        console.log(`Workers loop interval = ${env.WORKERKS_LOOP_INTERVAL_MILISECONDS / 1000} seconds.`);
-        setInterval(() => {
-            workers.gatherAllCheks();
-
-        }, env.WORKERKS_LOOP_INTERVAL_MILISECONDS)
+    log: (checkData: ICheck, checkOutcome: ICheckOutcome, state: 'up' | 'down', alertWarranted: boolean, timeOfCheck: number) => {
+        const logData = {
+            'check': checkData,
+            'outcome': checkOutcome,
+            'state': state,
+            'alert': alertWarranted,
+            'time': timeOfCheck
+        };
+        const logString = JSON.stringify(logData);
+        const logFileName = checkData.id;
+        logs.append(logFileName, logString, (e) => {
+            if (e) {
+                console.error(e);
+            } else {
+                // console.info('Logging to file succeded');
+            }
+        })
     },
     validateCheckData: (checkData: ICheck) => {
         if (Object.keys(checkData).length) {
@@ -89,16 +143,17 @@ const workers = {
         const _moduleToUse = originalCheckData.protocol === 'http' ? http : https;
         const req = _moduleToUse.request(requestOptions, (res) => {
             checkOutcome.responseCode = res.statusCode;
-            console.log('__________________________________________');
-            console.info(`${res.statusCode} ${requestOptions.method} ${requestOptions.hostname}`);
-            if (res.statusCode !== 200) { console.log(res.headers); }
+
+            if (res.statusCode && !originalCheckData.successCodes.includes(res.statusCode)) {
+                console.log(`headers`, res.headers);
+            }
 
             if (res.statusCode === 301 && res.headers.location) {
                 const newUrlLocation = url.parse(res.headers.location)
                 const hostname = newUrlLocation.hostname
                 if (hostname) {
                     // TODO: make notification for user about url permanently changed
-                    console.log(`check url changed to: ${hostname}`);
+                    console.log(`Check url changed to: ${hostname}`);
                     originalCheckData.url = hostname
                 }
             }
@@ -126,7 +181,7 @@ const workers = {
                 error: true,
                 value: 'timeout'
             };
-            console.error(req.host, checkOutcome.error);
+            // console.error(req.host, checkOutcome.error);
             if (!outcomeSent) {
                 workers.processCheckOutcome(originalCheckData, checkOutcome);
                 outcomeSent = true;
@@ -138,10 +193,21 @@ const workers = {
     processCheckOutcome: (originalCheckData: ICheck, checkOutcome: ICheckOutcome) => {
         const state = !checkOutcome.error && checkOutcome.responseCode
             && originalCheckData.successCodes.includes(checkOutcome.responseCode) ? 'up' : 'down';
-        const alertWarranted = originalCheckData.lastChecked && originalCheckData.state !== state;
+
+        const alertWarranted: boolean = originalCheckData.lastChecked && originalCheckData.state !== state ? true : false;
+
+        const timeOfCheck = Date.now()
         const newCheckData = originalCheckData;
         newCheckData.state = state;
-        newCheckData.lastChecked = Date.now();
+        newCheckData.lastChecked = timeOfCheck;
+
+        //console.log('__________________________________________');
+        console.info(`${timeOfCheck} ${checkOutcome.responseCode} ${originalCheckData.method} ${originalCheckData.protocol}://${originalCheckData.url} state:${state} alert:${alertWarranted}`);
+        workers.log(originalCheckData, checkOutcome, state, alertWarranted, timeOfCheck)
+        if (checkOutcome.error) {
+            console.error(checkOutcome.error);
+        }
+
         _data.update('checks', newCheckData.id, newCheckData, err => {
             if (err) {
                 console.error(`Error trying to update to one of the checks`);
@@ -154,8 +220,7 @@ const workers = {
                         console.log(`Check ${originalCheckData.id} ${originalCheckData.method} ${originalCheckData.protocol}://${originalCheckData.url} outcome has not changed, no alert needed`);
                     }
                 }
-            }
-            console.log(`==========================================`);
+            };
         })
     },
     alertUserToStatusChange: (checkData: ICheck) => {
